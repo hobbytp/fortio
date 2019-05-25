@@ -32,6 +32,8 @@ import (
 	"fortio.org/fortio/fnet"
 	"fortio.org/fortio/log"
 	"fortio.org/fortio/version"
+
+	"golang.org/x/net/http2"
 )
 
 // -- Echo Server --
@@ -147,12 +149,62 @@ func HTTPServer(name string, port string) (*http.ServeMux, net.Addr) {
 	if listener == nil {
 		return nil, nil // error already logged
 	}
+	
+	opts := &http2.ServeConnOpts{
+		BaseConfig: s,
+	}
+
+	srvH2 := &http2.Server{}
+	/*{
+		MaxHandlers:                  s.maxHandlers,
+		MaxConcurrentStreams:         s.maxConcurrentStreams,
+		MaxReadFrameSize:             s.maxReadFrameSize,
+		PermitProhibitedCipherSuites: s.permitProhibitedCipherSuites,
+		IdleTimeout:                  s.idleTimeout,
+		MaxUploadBufferPerConnection: s.maxUploadBufferPerConnection,
+		MaxUploadBufferPerStream:     s.maxUploadBufferPerStream,
+	}*/
+
+	var tempDelay time.Duration // how long to sleep on accept failure
+
+	
+	go func() {
+		for {
+			log.Infof("Hobby will call listener.Accept()")
+			rw, e := listener.Accept()
+			log.Infof("Hobby new golang thread for listener.Accept()")
+			if e != nil {
+				fmt.Println(e.Error())
+				if ne, ok := e.(net.Error); ok && ne.Temporary() {
+					if tempDelay == 0 {
+						tempDelay = 5 * time.Millisecond
+					} else {
+						tempDelay *= 2
+					}
+					if max := 1 * time.Second; tempDelay > max {
+						tempDelay = max
+					}
+					time.Sleep(tempDelay)
+					continue
+				}
+				fmt.Println(e.Error())
+				break
+			}
+			tempDelay = 0
+			//fmt.Printf("local: %s, remote: %s\n", rw.LocalAddr().String(), rw.RemoteAddr().String())
+			log.Infof("Hobby srvH2.ServeConn(rw,opts) is called,")
+			go srvH2.ServeConn(rw, opts)
+			//srvH2.ServeConn(rw, opts)
+		}
+	}()
+	/*
 	go func() {
 		err := s.Serve(listener)
 		if err != nil {
 			log.Fatalf("Unable to serve %s on %s: %v", name, addr.String(), err)
 		}
 	}()
+	*/
 	return m, addr
 }
 
