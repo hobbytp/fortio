@@ -170,9 +170,7 @@ func HTTPServer(name string, port string) (*http.ServeMux, net.Addr) {
 	
 	go func() {
 		for {
-			log.Infof("Hobby will call listener.Accept()")
 			rw, e := listener.Accept()
-			log.Infof("Hobby new golang thread for listener.Accept()")
 			if e != nil {
 				fmt.Println(e.Error())
 				if ne, ok := e.(net.Error); ok && ne.Temporary() {
@@ -192,9 +190,7 @@ func HTTPServer(name string, port string) (*http.ServeMux, net.Addr) {
 			}
 			tempDelay = 0
 			//fmt.Printf("local: %s, remote: %s\n", rw.LocalAddr().String(), rw.RemoteAddr().String())
-			log.Infof("Hobby srvH2.ServeConn(rw,opts) is called,")
 			go srvH2.ServeConn(rw, opts)
-			//srvH2.ServeConn(rw, opts)
 		}
 	}()
 	/*
