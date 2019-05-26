@@ -6,8 +6,9 @@
 
 IMAGES=echosrv fcurl # plus the combo image / Dockerfile without ext.
 
-DOCKER_PREFIX := docker.io/fortio/fortio
-BUILD_IMAGE_TAG := v13
+#DOCKER_PREFIX := docker.io/fortio/fortio
+DOCKER_PREFIX := hobbytp0614/fortio
+BUILD_IMAGE_TAG := v0.1
 BUILD_IMAGE := $(DOCKER_PREFIX).build:$(BUILD_IMAGE_TAG)
 
 TAG:=$(USER)$(shell date +%y%m%d_%H%M%S)
@@ -125,7 +126,8 @@ vendor.check:
 
 
 # Docker: Pushes the combo image and the smaller image(s)
-all: test go-install lint docker-version docker-push-internal
+#all: test go-install lint docker-version docker-push-internal
+all: go-install lint docker-version docker-push-internal
 	@for img in $(IMAGES); do \
 		$(MAKE) docker-push-internal IMAGE=.$$img TAG=$(TAG); \
 	done
@@ -133,8 +135,8 @@ all: test go-install lint docker-version docker-push-internal
 # When changing the build image, this Makefile should be edited first
 # (bump BUILD_IMAGE_TAG), also change this list if the image is used in
 # more places.
-FILES_WITH_IMAGE:= .circleci/config.yml Dockerfile Dockerfile.echosrv \
-	Dockerfile.test Dockerfile.fcurl release/Dockerfile.in Webtest.sh
+FILES_WITH_IMAGE:= .circleci/config.yml Dockerfile Dockerfile.echosrv # \
+	#Dockerfile.test Dockerfile.fcurl release/Dockerfile.in Webtest.sh
 # then run make update-build-image and check the diff, etc... see release/README.md
 update-build-image:
 	$(MAKE) docker-push-internal IMAGE=.build TAG=$(BUILD_IMAGE_TAG)
@@ -157,9 +159,9 @@ docker-push-internal: docker-internal
 release: dist
 	release/release.sh
 
-.PHONY: all docker-internal docker-push-internal docker-version test dependencies
+.PHONY: all docker-internal docker-push-internal docker-version dependencies
 
-.PHONY: go-install lint install-linters coverage webtest release-test update-build-image
+.PHONY: go-install lint install-linters coverage update-build-image
 
 .PHONY: local-lint update-build-image-tag release submodule submodule-sync pull certs certs-clean
 
@@ -258,7 +260,7 @@ official-install: official-build-clean official-build-version
 
 # Test distribution (only used by maintainer)
 
-.PHONY: debian-dist-common debian-dist-test debian-dist debian-sbuild
+.PHONY: debian-dist-common debian-dist debian-sbuild
 
 # warning, will be cleaned
 TMP_DIST_DIR:=~/tmp/fortio-dist
